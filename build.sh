@@ -9,6 +9,17 @@ abort()
     exit -1
 }
 
+run_command() {
+    local command="$@"
+    if [[ "$DEBUG" == "y" ]]; then
+        $command || abort
+        echo "-----------------------------------------------"
+    else
+        $command > >(while IFS= read -r line; do printf '\r%*s\r%s' "$(tput cols)" '' "$line"; done) 2>&1 || abort
+        echo -ne "\r\033[K"
+    fi
+}
+
 unset_flags()
 {
     cat << EOF
@@ -17,6 +28,7 @@ Options:
     -m, --model [value]    Specify the model code of the phone
     -k, --ksu [y/N]        Include KernelSU
     -r, --recovery [y/N]   Compile kernel for an Android Recovery
+    -d, --debug [y/N]       Enable debug mode
     -c, --ccache [y/N]     Use ccache to cache compilations
 EOF
 }
@@ -35,6 +47,10 @@ while [[ $# -gt 0 ]]; do
             RECOVERY_OPTION="$2"
             shift 2
             ;;
+        --debug|-d)
+            DEBUG="$2"
+            shift 2
+            ;;
         --ccache|-c)
             CCACHE_OPTION="$2"
             shift 2
@@ -46,6 +62,26 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+if [ -z $MODEL ]; then
+    cat << EOF
+Select a model:
+    x1s         x1slte
+    y2s         y2slte
+    c1s         c1slte
+    c2s         c2slte
+    z3s         r8s
+EOF
+    read -p "Enter your choice (c2s, c1s, c2slte): " MODEL
+fi
+
+
+if [[ "$RECOVERY_OPTION" == "y" ]]; then
+    RECOVERY=recovery.config
+    KSU_OPTION=n
+elif [ -z $KSU_OPTION ]; then
+    read -p "Include KernelSU (y/N): " KSU_OPTION
+fi
+echo "-----------------------------------------------"
 echo "Preparing the build environment..."
 
 pushd $(dirname "$0") > /dev/null
@@ -73,12 +109,6 @@ if [ ! -f "$CLANG_DIR/bin/clang-18" ]; then
     popd > /dev/null
 fi
 
-# Apply KSU patch for FBE support
-# Else it'll lose allowlist on reboot
-# Source patch: https://github.com/Unb0rn/android_kernel_samsung_exynos9820/commit/e424dac6ce3f99e128aaabb0711d69adf4079c77
-pushd ./KernelSU > /dev/null
-#patch -p1 -t -N  < ../build/KSU.patch > /dev/null
-popd > /dev/null
 
 if [[ "$CCACHE_OPTION" == "y" ]]; then
     CCACHE=ccache
@@ -131,14 +161,6 @@ r8s)
     exit
 esac
 
-if [[ "$RECOVERY_OPTION" == "y" ]]; then
-    RECOVERY=recovery.config
-    KSU_OPTION=n
-fi
-
-if [ -z $KSU_OPTION ]; then
-    read -p "Include KernelSU (y/N): " KSU_OPTION
-fi
 
 if [[ "$KSU_OPTION" == "y" ]]; then
     KSU=ksu.config
@@ -167,11 +189,11 @@ echo "-----------------------------------------------"
 echo "Building kernel using "$KERNEL_DEFCONFIG""
 echo "Generating configuration file..."
 echo "-----------------------------------------------"
-make ${MAKE_ARGS} -j$CORES $KERNEL_DEFCONFIG vulcan.config $RECOVERY $KSU || abort
+run_command "make ${MAKE_ARGS} -j$CORES $KERNEL_DEFCONFIG vulcan.config $RECOVERY $KSU"
 
 echo "Building kernel..."
 echo "-----------------------------------------------"
-make ${MAKE_ARGS} -j$CORES || abort
+run_command "make ${MAKE_ARGS} -j$CORES"
 
 # Define constant variables
 DTB_PATH=build/out/$MODEL/dtb.img
@@ -198,12 +220,12 @@ cp out/arch/arm64/boot/Image build/out/$MODEL
 # Build dtb
 echo "Building common exynos9830 Device Tree Blob Image..."
 echo "-----------------------------------------------"
-./toolchain/mkdtimg cfg_create build/out/$MODEL/dtb.img build/dtconfigs/exynos9830.cfg -d out/arch/arm64/boot/dts/exynos
+run_command "./toolchain/mkdtimg cfg_create build/out/$MODEL/dtb.img build/dtconfigs/exynos9830.cfg -d out/arch/arm64/boot/dts/exynos"
 
 # Build dtbo
 echo "Building Device Tree Blob Output Image for "$MODEL"..."
 echo "-----------------------------------------------"
-./toolchain/mkdtimg cfg_create build/out/$MODEL/dtbo.img build/dtconfigs/$MODEL.cfg -d out/arch/arm64/boot/dts/samsung
+run_command "./toolchain/mkdtimg cfg_create build/out/$MODEL/dtbo.img build/dtconfigs/$MODEL.cfg -d out/arch/arm64/boot/dts/samsung"
 
 if [ -z "$RECOVERY" ]; then
     # Build ramdisk
@@ -246,4 +268,5 @@ if [ -z "$RECOVERY" ]; then
 fi
 
 popd > /dev/null
-echo "Build finished successfully!"
+echo "Done!"
+echo "Output Directory: $(realpath build/out/$MODEL/$NAME)"
