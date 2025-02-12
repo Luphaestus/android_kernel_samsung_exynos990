@@ -6,7 +6,8 @@
 - OneUI 6.x support
 - Supports all Exynos 990 devices
 - Compiled with Neutron Clang 18 + LLVM/LLVM_IAS and arhitecture optimization
-- KernelSU v0.9.5 (version 11872) support
+- KernelSU-Next v1.0.4 (version 12360) support
+- SuSFS v1.5.5 (Non-GKI) support
 - Based on the latest Samsung source for Exynos 990
 - Fixed all compilation warnings and some Samsung bugs
 - Disabled Samsung's anti-rooting protection
