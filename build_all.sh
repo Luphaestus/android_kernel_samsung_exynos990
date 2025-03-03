@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# Get additional build flags from command line arguments
 BUILD_FLAGS="$@"
 
 rm -rf build/out/all/
