@@ -8,7 +8,6 @@ for device in $(find . -iname "*vulcan_*" | sed -E 's/.*vulcan_([^_]*)(_defconfi
     echo "Building for device: $device"
     ./build.sh -m "$device" $BUILD_FLAGS
     
-    # Check if build was successful
     if [ $? -ne 0 ]; then
         echo "Error: Build failed for $device"
         exit 1
