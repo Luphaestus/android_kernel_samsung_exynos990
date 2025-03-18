@@ -107,6 +107,7 @@ enum sec_reset_reason {
 	SEC_RESET_REASON_FWUP      = (SEC_RESET_REASON_PREFIX | 0x09), /* emergency firmware update */
 	SEC_RESET_REASON_EM_FUSE   = (SEC_RESET_REASON_PREFIX | 0x0a), /* EMC market fuse */
 	SEC_RESET_REASON_BOOTLOADER   = (SEC_RESET_REASON_PREFIX | 0x0d), /* go to download mode */
+	SEC_RESET_REASON_LK3RD	   = 0x4C, // Custom reboot mode
 	SEC_RESET_REASON_EMERGENCY = 0x0,
 
 	SEC_RESET_SET_FORCE_UPLOAD = (SEC_RESET_SET_PREFIX | 0x40000),
@@ -334,7 +335,7 @@ static void sec_reboot(enum reboot_mode reboot_mode, const char *cmd)
 		else if (!strcmp(cmd, "download"))
 			exynos_pmu_write(SEC_DEBUG_PANIC_INFORM, SEC_RESET_REASON_DOWNLOAD);
 		else if (!strcmp(cmd, "bootloader"))
-			exynos_pmu_write(SEC_DEBUG_PANIC_INFORM, SEC_RESET_REASON_BOOTLOADER);
+			exynos_pmu_write(EXYNOS_SYSIP_DAT0, SEC_RESET_REASON_LK3RD);
 		else if (!strcmp(cmd, "upload"))
 			exynos_pmu_write(SEC_DEBUG_PANIC_INFORM, SEC_RESET_REASON_UPLOAD);
 		else if (!strcmp(cmd, "secure"))

@@ -33,6 +33,7 @@
 /* TODO: SoC dependent offset, get them from LSI code ? */
 #define EXYNOS_PMU_INFORM2 0x0808
 #define EXYNOS_PMU_INFORM3 0x080C
+#define EXYNOS_SYSIP_DAT0  0x0810
 
 /* AP SFR to send some information from kernel to bootloader */
 #define SEC_DEBUG_MAGIC_INFORM		(EXYNOS_PMU_INFORM2)
