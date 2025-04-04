@@ -25,8 +25,6 @@
 extern bool susfs_is_current_ksu_domain(void);
 #endif
 
-
-
 static __poll_t mounts_poll(struct file *file, poll_table *wait)
 {
 	struct seq_file *m = file->private_data;
@@ -112,11 +110,6 @@ static int show_vfsmnt(struct seq_file *m, struct vfsmount *mnt)
 	int err;
 
 #ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
-	if (susfs_sus_mount(mnt, &p->root))
-		return 0;
-#endif
-
-#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
 	if (unlikely((r->mnt_id >= DEFAULT_SUS_MNT_ID) && !susfs_is_current_ksu_domain()))
 		return 0;
 #endif
@@ -157,16 +150,13 @@ static int show_mountinfo(struct seq_file *m, struct vfsmount *mnt)
 	struct path mnt_path = { .dentry = mnt->mnt_root, .mnt = mnt };
 	int err;
 
-#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
-	if (unlikely((r->mnt_id >= DEFAULT_SUS_MNT_ID) && !susfs_is_current_ksu_domain()))
-		return 0;
-#endif
 #ifdef CONFIG_KSU_SUSFS_SUS_MOUNT_MNT_ID_REORDER
 	int out_mnt_id = 0, out_parent_mnt_id = 0;
 	int status = 1;
 #endif
+
 #ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
-	if (susfs_sus_mount(mnt, &p->root))
+	if (unlikely((r->mnt_id >= DEFAULT_SUS_MNT_ID) && !susfs_is_current_ksu_domain()))
 		return 0;
 #ifdef CONFIG_KSU_SUSFS_SUS_MOUNT_MNT_ID_REORDER
 	if (!uid_matches_proc_need_to_reorder_mnt_id())
@@ -247,11 +237,6 @@ static int show_vfsstat(struct seq_file *m, struct vfsmount *mnt)
 	struct path mnt_path = { .dentry = mnt->mnt_root, .mnt = mnt };
 	struct super_block *sb = mnt_path.dentry->d_sb;
 	int err;
-
-#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
-	if (susfs_sus_mount(mnt, &p->root))
-		return 0;
-#endif
 
 #ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
 	if (unlikely((r->mnt_id >= DEFAULT_SUS_MNT_ID) && !susfs_is_current_ksu_domain()))
